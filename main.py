@@ -1,7 +1,6 @@
 import math
 import matplotlib.pyplot as plt
 from collections import defaultdict
-import matplotlib.colors as mcolors
 import numpy as np
 
 def generate_points_in_region(max_x):
@@ -90,7 +89,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
     - 对于具有多个点的距离组，使用圆弧连接，并赋予相同颜色。
     - 对于唯一距离的点，按距离顺序用黑色直线连接，且仅在各自的区域内连接。
     - 不同距离组之间不连接。
-    - 在每个区域内，黑色直线连接按顺序从1开始编号，并在连接线上显示编号。
+    - 在每个区域内，黑色直线连接按顺序从1开始编号，并在点上显示编号。
     """
     # 分离唯一距离点和多点距离组
     multiple_groups = []
@@ -133,26 +132,29 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
                 break
     
     # 绘制唯一距离点的黑色直线连接，按距离排序，并仅在各自区域内连接
+    sequence_number = 1  # 初始化序号
     for region_idx, points_in_region in region_to_unique_points.items():
         if len(points_in_region) < 2:
             continue  # 仅一个点，无需连接
         # 按距离排序
         points_sorted = sorted(points_in_region, key=lambda p: distance_from_origin(p))
-        # 按距离顺序连接，并编号
+        # 按距离顺序连接，并在点上显示编号
         for i in range(len(points_sorted) - 1):
             p1 = points_sorted[i]
             p2 = points_sorted[i+1]
             ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linestyle='-', linewidth=1)
-            # 计算连接线的中点，用于显示编号
-            mid_x = (p1[0] + p2[0]) / 2
-            mid_y = (p1[1] + p2[1]) / 2
-            # 标注编号，从1开始
-            label = f"{i+1}"
-            ax.text(mid_x, mid_y, label, color='black', fontsize=8, ha='center', va='center', backgroundcolor='white')
-        # 绘制散点，黑色
-        x_unique = [p[0] for p in points_sorted]
-        y_unique = [p[1] for p in points_sorted]
-        ax.scatter(x_unique, y_unique, color='black', zorder=5)
+            # 绘制散点，黑色
+            ax.scatter(p1[0], p1[1], color='black', zorder=5)
+            # 在点上显示编号
+            ax.text(p1[0], p1[1], f"{sequence_number}", color='black', fontsize=8,
+                    ha='right', va='bottom', backgroundcolor='white')
+            sequence_number += 1
+        # 绘制最后一个点并标注编号
+        p_last = points_sorted[-1]
+        ax.scatter(p_last[0], p_last[1], color='black', zorder=5)
+        ax.text(p_last[0], p_last[1], f"{sequence_number}", color='black', fontsize=8,
+                ha='right', va='bottom', backgroundcolor='white')
+        sequence_number += 1
     
     # 绘制多点距离组的圆弧连接
     for d, points in multiple_groups:
@@ -182,7 +184,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
         x_vals = [p[0] for p in points_sorted]
         y_vals = [p[1] for p in points_sorted]
         ax.scatter(x_vals, y_vals, color=color, zorder=5)
-    
+
 def plot_grid_and_boundaries(ax, points, max_coord):
     """
     绘制y=0和y=x的边界线
@@ -225,6 +227,7 @@ def main():
     
     # 绘制原点
     ax.scatter(0, 0, color='black', s=50, label='Origin (0,0)', zorder=5)
+    ax.text(0, 0, "0", color='black', fontsize=8, ha='right', va='bottom', backgroundcolor='white')
     
     # 绘制边界线
     max_coord = max(max([p[0] for p in points], default=1),
