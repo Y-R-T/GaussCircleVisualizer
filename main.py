@@ -88,27 +88,48 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
     """
     绘制点之间的连接：
     - 对于具有多个点的距离组，使用圆弧连接，并赋予相同颜色。
-    - 对于唯一距离的点，按距离顺序用黑色直线连接。
+    - 对于唯一距离的点，按距离顺序用黑色直线连接，且仅在各自的区域内连接。
     - 不同距离组之间不连接。
     """
     # 分离唯一距离点和多点距离组
-    unique_points = []
     multiple_groups = []
+    unique_points = []
     for d in sorted_distances:
         points = dist_dict[d]
-        if len(points) == 1:
-            unique_points.append(points[0])
-        else:
+        if len(points) >= 2:
             multiple_groups.append((d, points))
+        else:
+            unique_points.append(points[0])
     
-    # 按距离排序唯一距离点
-    unique_points_sorted = sorted(unique_points, key=lambda p: distance_from_origin(p))
+    # 识别多点距离组，排序
+    multiple_distances = sorted([d for d, pts in multiple_groups])
     
-    # 绘制唯一距离点的黑色直线连接
-    if unique_points_sorted:
-        x_unique = [p[0] for p in unique_points_sorted]
-        y_unique = [p[1] for p in unique_points_sorted]
-        ax.plot(x_unique, y_unique, color='black', linestyle='-', linewidth=1, label='Unique Distance Connections')
+    # 定义区域边界
+    region_boundaries = [0] + multiple_distances + [max(sorted_distances)]
+    
+    # 定义区域之间的范围
+    regions = []
+    for i in range(len(region_boundaries)-1):
+        regions.append( (region_boundaries[i], region_boundaries[i+1]) )
+    
+    # 将唯一距离点分配到各个区域
+    region_to_unique_points = defaultdict(list)
+    for p in unique_points:
+        d = distance_from_origin(p)
+        for idx, (start, end) in enumerate(regions):
+            if start < d < end:
+                region_to_unique_points[idx].append(p)
+                break
+    
+    # 绘制唯一距离点的黑色直线连接，按距离排序，并仅在各自区域内连接
+    for region_idx, points_in_region in region_to_unique_points.items():
+        if len(points_in_region) < 2:
+            continue  # 仅一个点，无需连接
+        # 按距离排序
+        points_sorted = sorted(points_in_region, key=lambda p: distance_from_origin(p))
+        x_unique = [p[0] for p in points_sorted]
+        y_unique = [p[1] for p in points_sorted]
+        ax.plot(x_unique, y_unique, color='black', linestyle='-', linewidth=1)
         ax.scatter(x_unique, y_unique, color='black', zorder=5)
     
     # 绘制多点距离组的圆弧连接
@@ -119,7 +140,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
         radius = d
         color = distance_to_color.get(d, 'black')
         
-        # 连接相邻点使用圆弧
+        # 连接相邻点使用圆弧，环状连接
         for i in range(len(points_sorted)):
             p1 = points_sorted[i]
             p2 = points_sorted[(i + 1) % len(points_sorted)]  # 环状连接
@@ -139,7 +160,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
         x_vals = [p[0] for p in points_sorted]
         y_vals = [p[1] for p in points_sorted]
         ax.scatter(x_vals, y_vals, color=color, zorder=5)
-    
+
 def plot_grid_and_boundaries(ax, points, max_coord):
     """
     绘制y=0和y=x的边界线
@@ -157,7 +178,7 @@ def create_legend(ax, distance_to_color):
         handles.append(plt.Line2D([], [], color=color, linewidth=2))
         labels.append(f'd = {d:.2f}')
     if handles:
-        ax.legend(handles, labels, title='Distances with ≥2 points', loc='upper right')
+        ax.legend(handles, labels, title='Distances with ≥2 points', loc='upper right', bbox_to_anchor=(1.3, 1))
     else:
         ax.legend()
 
@@ -175,7 +196,7 @@ def main():
     distance_to_color = assign_colors(sorted_distances, dist_dict)
     
     # 设置绘图
-    fig, ax = plt.subplots(figsize=(10, 10))
+    fig, ax = plt.subplots(figsize=(9, 9))
     
     # 绘制连接
     plot_connections(ax, dist_dict, sorted_distances, distance_to_color)
