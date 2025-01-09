@@ -90,6 +90,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
     - 对于具有多个点的距离组，使用圆弧连接，并赋予相同颜色。
     - 对于唯一距离的点，按距离顺序用黑色直线连接，且仅在各自的区域内连接。
     - 不同距离组之间不连接。
+    - 在每个区域内，黑色直线连接按顺序从1开始编号，并在连接线上显示编号。
     """
     # 分离唯一距离点和多点距离组
     multiple_groups = []
@@ -105,7 +106,17 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
     multiple_distances = sorted([d for d, pts in multiple_groups])
     
     # 定义区域边界
-    region_boundaries = [0] + multiple_distances + [max(sorted_distances)]
+    # 每个区域的边界由前一个多点距离和当前多点距离决定
+    region_boundaries = [0]  # 起始于0
+    for d in multiple_distances:
+        region_boundaries.append(d)
+    if multiple_distances:
+        max_distance = max(sorted_distances)
+        region_boundaries.append(max_distance + 1)  # 结束于最大距离+1，确保覆盖所有点
+    else:
+        # 如果没有多点距离组，整个区域从0到最大距离
+        max_distance = max(sorted_distances)
+        region_boundaries = [0, max_distance + 1]
     
     # 定义区域之间的范围
     regions = []
@@ -127,9 +138,20 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
             continue  # 仅一个点，无需连接
         # 按距离排序
         points_sorted = sorted(points_in_region, key=lambda p: distance_from_origin(p))
+        # 按距离顺序连接，并编号
+        for i in range(len(points_sorted) - 1):
+            p1 = points_sorted[i]
+            p2 = points_sorted[i+1]
+            ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linestyle='-', linewidth=1)
+            # 计算连接线的中点，用于显示编号
+            mid_x = (p1[0] + p2[0]) / 2
+            mid_y = (p1[1] + p2[1]) / 2
+            # 标注编号，从1开始
+            label = f"{i+1}"
+            ax.text(mid_x, mid_y, label, color='black', fontsize=8, ha='center', va='center', backgroundcolor='white')
+        # 绘制散点，黑色
         x_unique = [p[0] for p in points_sorted]
         y_unique = [p[1] for p in points_sorted]
-        ax.plot(x_unique, y_unique, color='black', linestyle='-', linewidth=1)
         ax.scatter(x_unique, y_unique, color='black', zorder=5)
     
     # 绘制多点距离组的圆弧连接
@@ -160,7 +182,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
         x_vals = [p[0] for p in points_sorted]
         y_vals = [p[1] for p in points_sorted]
         ax.scatter(x_vals, y_vals, color=color, zorder=5)
-
+    
 def plot_grid_and_boundaries(ax, points, max_coord):
     """
     绘制y=0和y=x的边界线
@@ -196,7 +218,7 @@ def main():
     distance_to_color = assign_colors(sorted_distances, dist_dict)
     
     # 设置绘图
-    fig, ax = plt.subplots(figsize=(9, 9))
+    fig, ax = plt.subplots(figsize=(12, 12))
     
     # 绘制连接
     plot_connections(ax, dist_dict, sorted_distances, distance_to_color)
@@ -214,7 +236,7 @@ def main():
     ax.set_ylim(0, max_coord)
     ax.set_xlabel('x')
     ax.set_ylabel('y')
-    ax.set_title('整数点连接图：同距离点用圆弧连接，其他点按距离排序用黑色直线连接')
+    ax.set_title('整数点连接图：同距离点用圆弧连接，其他点按距离排序用黑色直线连接并编号')
     ax.grid(True)
     ax.set_aspect('equal', 'box')
     
