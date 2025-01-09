@@ -89,7 +89,7 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
     - 对于具有多个点的距离组，使用圆弧连接，并赋予相同颜色。
     - 对于唯一距离的点，按距离顺序用黑色直线连接，且仅在各自的区域内连接。
     - 不同距离组之间不连接。
-    - 在每个区域内，黑色直线连接按顺序从1开始编号，并在点上显示编号。
+    - 在每个区域内，黑色直线连接按顺序从1开始编号，并在连接的点上显示编号。
     """
     # 分离唯一距离点和多点距离组
     multiple_groups = []
@@ -132,7 +132,6 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
                 break
     
     # 绘制唯一距离点的黑色直线连接，按距离排序，并仅在各自区域内连接
-    sequence_number = 1  # 初始化序号
     for region_idx, points_in_region in region_to_unique_points.items():
         if len(points_in_region) < 2:
             continue  # 仅一个点，无需连接
@@ -145,16 +144,16 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
             ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linestyle='-', linewidth=1)
             # 绘制散点，黑色
             ax.scatter(p1[0], p1[1], color='black', zorder=5)
-            # 在点上显示编号
-            ax.text(p1[0], p1[1], f"{sequence_number}", color='black', fontsize=8,
+            # 在点上显示编号，从1开始
+            label = f"{i+1}"
+            ax.text(p1[0], p1[1], f"{label}", color='black', fontsize=8,
                     ha='right', va='bottom', backgroundcolor='white')
-            sequence_number += 1
         # 绘制最后一个点并标注编号
         p_last = points_sorted[-1]
         ax.scatter(p_last[0], p_last[1], color='black', zorder=5)
-        ax.text(p_last[0], p_last[1], f"{sequence_number}", color='black', fontsize=8,
+        label = f"{len(points_sorted)}"
+        ax.text(p_last[0], p_last[1], f"{label}", color='black', fontsize=8,
                 ha='right', va='bottom', backgroundcolor='white')
-        sequence_number += 1
     
     # 绘制多点距离组的圆弧连接
     for d, points in multiple_groups:
