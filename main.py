@@ -1,13 +1,15 @@
 import math
 import matplotlib.pyplot as plt
 from collections import defaultdict
+import matplotlib.colors as mcolors
+import numpy as np
 
 def generate_points_in_region(max_x):
     """
     生成满足 0 < y < x 的所有整数点
     """
     points = []
-    for x in range(1, max_x+1):
+    for x in range(1, max_x + 1):
         for y in range(1, x):
             points.append((x, y))
     return points
@@ -24,9 +26,12 @@ def angle_from_xaxis(point):
     计算点相对于 x 轴(正向)的极角, 范围 [0, 2π)
     """
     x, y = point
-    return math.atan2(y, x)  # atan2返回[-π, π], 但排序即可
+    angle = math.atan2(y, x)
+    if angle < 0:
+        angle += 2 * math.pi
+    return angle
 
-def group_points_by_distance(points):
+def group_points_by_distance(points, tol=1e-5):
     """
     将点按到原点距离分组, 返回:
     {
@@ -34,92 +39,169 @@ def group_points_by_distance(points):
        distance2: [ (x3,y3), ... ],
        ...
     }
-    同时记录距离的有序列表
+    并确保距离的分组具有精度容忍度
     """
     dist_dict = defaultdict(list)
     for p in points:
         d = distance_from_origin(p)
-        dist_dict[d].append(p)
+        # 通过四舍五入处理浮点数精度问题
+        d_rounded = round(d / tol) * tol
+        dist_dict[d_rounded].append(p)
     # 按距离从小到大排序
     sorted_distances = sorted(dist_dict.keys())
     return dist_dict, sorted_distances
 
-def plot_same_distance_lines(dist_dict, sorted_distances):
+def assign_colors(sorted_distances, dist_dict):
     """
-    - 对每个距离 d, 如果有多个点, 则按极角排序后相互连线并上色.
-    - 如果仅有单个点, 则不连线且用默认颜色(如黑色).
-    - 不同距离之间不连线.
+    为每个具有多个点的距离分配颜色，返回：
+    distance_to_color: { distance: color }
     """
-    plt.figure(figsize=(10, 10))
+    # 识别需要上色的距离
+    color_distances = [d for d in sorted_distances if len(dist_dict[d]) >= 2]
     
-    # 准备一个简易的调色板, 如果有大量距离, 可考虑使用colormap
-    colors = ["blue", "red", "green", "orange", "purple", "brown", 
-              "pink", "gray", "olive", "cyan"]
+    num_colors = len(color_distances)
+    if num_colors == 0:
+        return {}
     
-    # 先收集所有点, 用于确定绘图范围
-    all_points = []
-    for dist in sorted_distances:
-        all_points.extend(dist_dict[dist])
-    max_coord = 1
-    if all_points:
-        max_coord = max(max(p[0] for p in all_points),
-                        max(p[1] for p in all_points)) + 1
+    # 使用离散色图
+    cmap = plt.get_cmap('tab20')
+    if num_colors > cmap.N:
+        cmap = plt.get_cmap('hsv')  # 如果颜色数量超过tab20，使用hsv
+    colors = cmap(np.linspace(0, 1, num_colors))
     
-    # 画出原点
-    plt.scatter([0], [0], color='k', label='Origin (0,0)')
+    distance_to_color = {}
+    for idx, d in enumerate(color_distances):
+        distance_to_color[d] = colors[idx]
     
-    color_idx = 0  # 用来在颜色列表中循环
-    
+    return distance_to_color
+
+def plot_arc(ax, center, radius, start_angle, end_angle, color, linewidth=2):
+    """
+    在ax上绘制从start_angle到end_angle的圆弧
+    """
+    theta = np.linspace(start_angle, end_angle, 100)
+    x = center[0] + radius * np.cos(theta)
+    y = center[1] + radius * np.sin(theta)
+    ax.plot(x, y, color=color, linewidth=linewidth)
+
+def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
+    """
+    绘制点之间的连接：
+    - 对于具有多个点的距离组，使用圆弧连接，并赋予相同颜色。
+    - 对于唯一距离的点，按距离顺序用黑色直线连接。
+    - 不同距离组之间不连接。
+    """
+    # 分离唯一距离点和多点距离组
+    unique_points = []
+    multiple_groups = []
     for d in sorted_distances:
-        points_d = dist_dict[d]
-        if len(points_d) == 1:
-            # 仅一个点, 不连线, 用黑色
-            x0, y0 = points_d[0]
-            plt.scatter([x0], [y0], color='k')
+        points = dist_dict[d]
+        if len(points) == 1:
+            unique_points.append(points[0])
         else:
-            # 2 个或以上点, 排序后连线, 并上色
-            # 先按极角排序
-            points_d_sorted = sorted(points_d, key=angle_from_xaxis)
-            
-            # 为这组距离选一个颜色
-            c = colors[color_idx % len(colors)]
-            color_idx += 1
-            
-            # 连线(不首尾闭合), 并用同一种颜色标记
-            # 如果想首尾闭合, 可再补一个首尾连接
-            for i in range(len(points_d_sorted) - 1):
-                p1 = points_d_sorted[i]
-                p2 = points_d_sorted[i+1]
-                plt.plot([p1[0], p2[0]], [p1[1], p2[1]], color=c, linewidth=2)
-            
-            # 将所有该组点画上散点 (同色)
-            xvals = [p[0] for p in points_d_sorted]
-            yvals = [p[1] for p in points_d_sorted]
-            plt.scatter(xvals, yvals, color=c)
+            multiple_groups.append((d, points))
     
-    # 画上 y=0 和 y=x 的边界线 (可选)
-    plt.plot([0, max_coord], [0, 0], 'k--', label='y=0')
-    plt.plot([0, max_coord], [0, max_coord], 'k--', label='y=x')
+    # 按距离排序唯一距离点
+    unique_points_sorted = sorted(unique_points, key=lambda p: distance_from_origin(p))
     
-    plt.axis('equal')
-    plt.xlim(0, max_coord)
-    plt.ylim(0, max_coord)
-    plt.xlabel("x")
-    plt.ylabel("y")
-    plt.title("相同距离的点相互连接，不同距离不连线\n仅当同一距离点数≥2时才上色并连线")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # 绘制唯一距离点的黑色直线连接
+    if unique_points_sorted:
+        x_unique = [p[0] for p in unique_points_sorted]
+        y_unique = [p[1] for p in unique_points_sorted]
+        ax.plot(x_unique, y_unique, color='black', linestyle='-', linewidth=1, label='Unique Distance Connections')
+        ax.scatter(x_unique, y_unique, color='black', zorder=5)
+    
+    # 绘制多点距离组的圆弧连接
+    for d, points in multiple_groups:
+        # 按极角排序
+        points_sorted = sorted(points, key=lambda p: angle_from_xaxis(p))
+        angles = [angle_from_xaxis(p) for p in points_sorted]
+        radius = d
+        color = distance_to_color.get(d, 'black')
+        
+        # 连接相邻点使用圆弧
+        for i in range(len(points_sorted)):
+            p1 = points_sorted[i]
+            p2 = points_sorted[(i + 1) % len(points_sorted)]  # 环状连接
+            angle1 = angle_from_xaxis(p1)
+            angle2 = angle_from_xaxis(p2)
+            
+            # 确保从angle1到angle2的最短路径
+            delta_angle = angle2 - angle1
+            if delta_angle <= -math.pi:
+                angle2 += 2 * math.pi
+            elif delta_angle > math.pi:
+                angle2 -= 2 * math.pi
+            
+            plot_arc(ax, (0,0), radius, angle1, angle2, color, linewidth=2)
+        
+        # 绘制散点，赋予颜色
+        x_vals = [p[0] for p in points_sorted]
+        y_vals = [p[1] for p in points_sorted]
+        ax.scatter(x_vals, y_vals, color=color, zorder=5)
+    
+def plot_grid_and_boundaries(ax, points, max_coord):
+    """
+    绘制y=0和y=x的边界线
+    """
+    ax.plot([0, max_coord], [0, 0], 'k--', label='y=0')
+    ax.plot([0, max_coord], [0, max_coord], 'k--', label='y=x')
+
+def create_legend(ax, distance_to_color):
+    """
+    创建颜色图例，仅展示存在相同距离的格点
+    """
+    handles = []
+    labels = []
+    for d, color in distance_to_color.items():
+        handles.append(plt.Line2D([], [], color=color, linewidth=2))
+        labels.append(f'd = {d:.2f}')
+    if handles:
+        ax.legend(handles, labels, title='Distances with ≥2 points', loc='upper right')
+    else:
+        ax.legend()
 
 def main():
-    max_x = 20  # 可根据需要调整
+    # 预设最大x值
+    max_x = 20  # 根据需要调整
+    
+    # 生成整数点
     points = generate_points_in_region(max_x)
     
     # 按距离分组
     dist_dict, sorted_distances = group_points_by_distance(points)
     
-    # 绘图
-    plot_same_distance_lines(dist_dict, sorted_distances)
+    # 分配颜色，仅对存在多个点的距离赋色
+    distance_to_color = assign_colors(sorted_distances, dist_dict)
+    
+    # 设置绘图
+    fig, ax = plt.subplots(figsize=(10, 10))
+    
+    # 绘制连接
+    plot_connections(ax, dist_dict, sorted_distances, distance_to_color)
+    
+    # 绘制原点
+    ax.scatter(0, 0, color='black', s=50, label='Origin (0,0)', zorder=5)
+    
+    # 绘制边界线
+    max_coord = max(max([p[0] for p in points], default=1),
+                    max([p[1] for p in points], default=1)) + 1
+    plot_grid_and_boundaries(ax, points, max_coord)
+    
+    # 设置坐标轴
+    ax.set_xlim(0, max_coord)
+    ax.set_ylim(0, max_coord)
+    ax.set_xlabel('x')
+    ax.set_ylabel('y')
+    ax.set_title('整数点连接图：同距离点用圆弧连接，其他点按距离排序用黑色直线连接')
+    ax.grid(True)
+    ax.set_aspect('equal', 'box')
+    
+    # 创建图例
+    create_legend(ax, distance_to_color)
+    
+    plt.tight_layout()
+    plt.show()
 
 if __name__ == "__main__":
     main()
