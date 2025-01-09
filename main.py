@@ -134,6 +134,12 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color, show_li
     # 绘制唯一距离点的黑色直线连接，按距离排序，并仅在各自区域内连接
     for region_idx, points_in_region in region_to_unique_points.items():
         if len(points_in_region) < 2:
+            if show_numbers:
+                # 仅一个点时，如果需要显示编号，则显示编号1
+                p = points_in_region[0]
+                ax.scatter(p[0], p[1], color='black', zorder=5)
+                ax.text(p[0], p[1], "1", color='black', fontsize=8,
+                        ha='right', va='bottom', backgroundcolor='white')
             continue  # 仅一个点，无需连接
         # 按距离排序
         points_sorted = sorted(points_in_region, key=lambda p: distance_from_origin(p))
@@ -148,8 +154,8 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color, show_li
                 label = f"{i+1}"
                 ax.text(p1[0], p1[1], f"{label}", color='black', fontsize=8,
                         ha='right', va='bottom', backgroundcolor='white')
-        if show_lines and show_numbers:
-            # 为最后一个点显示编号
+        if show_numbers:
+            # 为最后一个点显示编号，编号为len(points_sorted)
             p_last = points_sorted[-1]
             label = f"{len(points_sorted)}"
             ax.text(p_last[0], p_last[1], f"{label}", color='black', fontsize=8,
@@ -206,7 +212,7 @@ def create_legend(ax, distance_to_color):
         handles.append(plt.Line2D([], [], color=color, linewidth=2))
         labels.append(f'd = {d:.2f}')
     if handles:
-        ax.legend(handles, labels, title='Distances with ≥2 points', loc='upper right', bbox_to_anchor=(1.3, 1))
+        ax.legend(handles, labels, title='相同距离的点', loc='upper right', bbox_to_anchor=(1.3, 1))
     else:
         ax.legend()
 
@@ -219,7 +225,7 @@ def main(show_lines=True, show_numbers=True):
     - show_numbers (bool): 是否在点上显示编号。
     """
     # 预设最大x值
-    max_x = 12  # 根据需要调整
+    max_x = 20  # 根据需要调整
     
     # 生成整数点
     points = generate_points_in_region(max_x)
@@ -237,7 +243,7 @@ def main(show_lines=True, show_numbers=True):
     plot_connections(ax, dist_dict, sorted_distances, distance_to_color, show_lines, show_numbers)
     
     # 绘制原点
-    ax.scatter(0, 0, color='black', s=50, label='Origin (0,0)', zorder=5)
+    ax.scatter(0, 0, color='black', s=50, label='原点 (0,0)', zorder=5)
     if show_numbers:
         ax.text(0, 0, "0", color='black', fontsize=8, ha='right', va='bottom', backgroundcolor='white')
     
@@ -263,6 +269,6 @@ def main(show_lines=True, show_numbers=True):
 
 if __name__ == "__main__":
     # 设置控制参数
-    # 设置 show_lines=True 显示黑色直线连接
-    # 设置 show_numbers=True 在点上显示编号
+    # show_lines=True 显示黑色直线连接
+    # show_numbers=True 在点上显示编号
     main(show_lines=False, show_numbers=True)
