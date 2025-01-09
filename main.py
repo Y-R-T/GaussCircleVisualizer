@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import math
-from itertools import combinations
 
 def generate_integer_points(max_x):
     """
@@ -12,44 +11,44 @@ def generate_integer_points(max_x):
             points.append((x, y))
     return points
 
-def compute_distances(points):
+def compute_distance(point):
     """
-    计算每个点到原点的距离
+    计算点到原点的欧几里得距离
     """
-    return [(point, math.hypot(point[0], point[1])) for point in points]
+    return math.hypot(point[0], point[1])
 
-def find_closest_pair(points_with_distances):
+def sort_points_by_distance(points):
     """
-    找到距离原点最近的两个点
+    按距离从小到大排序点
     """
-    sorted_points = sorted(points_with_distances, key=lambda x: x[1])
-    if len(sorted_points) < 2:
-        return None
-    return sorted_points[0][0], sorted_points[1][0]
+    return sorted(points, key=compute_distance)
 
-def plot_points_and_connections(points, connections):
+def plot_polyline(sorted_points):
     """
-    绘制点和连接线
+    绘制从原点开始，按照排序顺序连接的折线
     """
-    x_vals = [p[0] for p in points]
-    y_vals = [p[1] for p in points]
+    # 包含原点
+    polyline = [(0, 0)] + sorted_points
     
-    plt.figure(figsize=(8, 8))
-    plt.scatter(x_vals, y_vals, color='blue')
+    x_vals = [p[0] for p in polyline]
+    y_vals = [p[1] for p in polyline]
     
-    # 绘制连接线
-    for conn in connections:
-        x_values = [conn[0][0], conn[1][0]]
-        y_values = [conn[0][1], conn[1][1]]
-        plt.plot(x_values, y_values, color='red')
+    plt.figure(figsize=(10, 10))
+    
+    # 绘制折线
+    plt.plot(x_vals, y_vals, marker='o', linestyle='-', color='blue', label='Polyline')
+    
+    # 绘制所有点
+    plt.scatter(x_vals, y_vals, color='red')
     
     # 绘制y=0和y=x的边界（可选）
-    plt.plot([0, max(x_vals)+1], [0, 0], 'k--')  # y=0
-    plt.plot([0, max(x_vals)+1], [0, max(x_vals)+1], 'k--')  # y=x
+    plt.plot([0, max(x_vals)+1], [0, 0], 'k--', label='y=0')  # y=0
+    plt.plot([0, max(x_vals)+1], [0, max(x_vals)+1], 'g--', label='y=x')  # y=x
     
-    plt.title('整数点及其连接')
+    plt.title('按距离排序的连续折线')
     plt.xlabel('x')
     plt.ylabel('y')
+    plt.legend()
     plt.grid(True)
     plt.axis('equal')
     plt.show()
@@ -61,22 +60,11 @@ def main():
     # 生成整数点
     points = generate_integer_points(max_x)
     
-    # 计算距离
-    points_with_distances = compute_distances(points)
-    
     # 按距离排序
-    sorted_points = sorted(points_with_distances, key=lambda x: x[1])
+    sorted_points = sort_points_by_distance(points)
     
-    # 连接点：依次每两个最近的点连接
-    connections = []
-    used = set()
-    for i in range(0, len(sorted_points)-1, 2):
-        p1 = sorted_points[i][0]
-        p2 = sorted_points[i+1][0]
-        connections.append((p1, p2))
-    
-    # 绘图
-    plot_points_and_connections(points, connections)
+    # 绘制折线
+    plot_polyline(sorted_points)
 
 if __name__ == "__main__":
     main()
