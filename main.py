@@ -83,13 +83,13 @@ def plot_arc(ax, center, radius, start_angle, end_angle, color, linewidth=2):
     y = center[1] + radius * np.sin(theta)
     ax.plot(x, y, color=color, linewidth=linewidth)
 
-def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
+def plot_connections(ax, dist_dict, sorted_distances, distance_to_color, show_lines=True, show_numbers=True):
     """
     绘制点之间的连接：
     - 对于具有多个点的距离组，使用圆弧连接，并赋予相同颜色。
     - 对于唯一距离的点，按距离顺序用黑色直线连接，且仅在各自的区域内连接。
     - 不同距离组之间不连接。
-    - 在每个区域内，黑色直线连接按顺序从1开始编号，并在连接的点上显示编号。
+    - 根据参数控制是否显示黑色直线连接和编号。
     """
     # 分离唯一距离点和多点距离组
     multiple_groups = []
@@ -141,19 +141,24 @@ def plot_connections(ax, dist_dict, sorted_distances, distance_to_color):
         for i in range(len(points_sorted) - 1):
             p1 = points_sorted[i]
             p2 = points_sorted[i+1]
-            ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linestyle='-', linewidth=1)
-            # 绘制散点，黑色
-            ax.scatter(p1[0], p1[1], color='black', zorder=5)
-            # 在点上显示编号，从1开始
-            label = f"{i+1}"
-            ax.text(p1[0], p1[1], f"{label}", color='black', fontsize=8,
+            if show_lines:
+                ax.plot([p1[0], p2[0]], [p1[1], p2[1]], color='black', linestyle='-', linewidth=1)
+            if show_numbers:
+                # 在点p1上显示编号，从1开始
+                label = f"{i+1}"
+                ax.text(p1[0], p1[1], f"{label}", color='black', fontsize=8,
+                        ha='right', va='bottom', backgroundcolor='white')
+        if show_lines and show_numbers:
+            # 为最后一个点显示编号
+            p_last = points_sorted[-1]
+            label = f"{len(points_sorted)}"
+            ax.text(p_last[0], p_last[1], f"{label}", color='black', fontsize=8,
                     ha='right', va='bottom', backgroundcolor='white')
-        # 绘制最后一个点并标注编号
-        p_last = points_sorted[-1]
-        ax.scatter(p_last[0], p_last[1], color='black', zorder=5)
-        label = f"{len(points_sorted)}"
-        ax.text(p_last[0], p_last[1], f"{label}", color='black', fontsize=8,
-                ha='right', va='bottom', backgroundcolor='white')
+        # 绘制散点，黑色
+        if show_lines or show_numbers:
+            x_unique = [p[0] for p in points_sorted]
+            y_unique = [p[1] for p in points_sorted]
+            ax.scatter(x_unique, y_unique, color='black', zorder=5)
     
     # 绘制多点距离组的圆弧连接
     for d, points in multiple_groups:
@@ -205,9 +210,16 @@ def create_legend(ax, distance_to_color):
     else:
         ax.legend()
 
-def main():
+def main(show_lines=True, show_numbers=True):
+    """
+    主函数，生成并绘制整数点连接图。
+    
+    参数:
+    - show_lines (bool): 是否显示黑色直线连接。
+    - show_numbers (bool): 是否在点上显示编号。
+    """
     # 预设最大x值
-    max_x = 20  # 根据需要调整
+    max_x = 12  # 根据需要调整
     
     # 生成整数点
     points = generate_points_in_region(max_x)
@@ -222,11 +234,12 @@ def main():
     fig, ax = plt.subplots(figsize=(12, 12))
     
     # 绘制连接
-    plot_connections(ax, dist_dict, sorted_distances, distance_to_color)
+    plot_connections(ax, dist_dict, sorted_distances, distance_to_color, show_lines, show_numbers)
     
     # 绘制原点
     ax.scatter(0, 0, color='black', s=50, label='Origin (0,0)', zorder=5)
-    ax.text(0, 0, "0", color='black', fontsize=8, ha='right', va='bottom', backgroundcolor='white')
+    if show_numbers:
+        ax.text(0, 0, "0", color='black', fontsize=8, ha='right', va='bottom', backgroundcolor='white')
     
     # 绘制边界线
     max_coord = max(max([p[0] for p in points], default=1),
@@ -249,4 +262,7 @@ def main():
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    # 设置控制参数
+    # 设置 show_lines=True 显示黑色直线连接
+    # 设置 show_numbers=True 在点上显示编号
+    main(show_lines=False, show_numbers=True)
