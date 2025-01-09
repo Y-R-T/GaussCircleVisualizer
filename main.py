@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import math
+from collections import defaultdict
 
 def generate_integer_points(max_x):
     """
@@ -25,27 +26,55 @@ def sort_points_by_distance(points):
 
 def plot_polyline(sorted_points):
     """
-    绘制从原点开始，按照排序顺序连接的折线
+    绘制从原点开始，按照排序顺序连接的折线，
+    仅当两个连续点的距离不同时时绘制连接线
     """
     # 包含原点
-    polyline = [(0, 0)] + sorted_points
+    polyline_points = [(0, 0)] + sorted_points
+    distances = [compute_distance(p) for p in polyline_points]
     
-    x_vals = [p[0] for p in polyline]
-    y_vals = [p[1] for p in polyline]
-    
+    # 准备绘图数据
+    x_vals = []
+    y_vals = []
+    segments = []
+
+    for i in range(1, len(polyline_points)):
+        prev_point = polyline_points[i - 1]
+        current_point = polyline_points[i]
+        prev_distance = distances[i - 1]
+        current_distance = distances[i]
+        
+        # 添加当前点到列表
+        x_vals.append(current_point[0])
+        y_vals.append(current_point[1])
+        
+        # 如果距离不同，则添加线段
+        if current_distance != prev_distance:
+            segments.append((prev_point, current_point))
+        else:
+            # 距离相同，不连接线
+            pass
+
+    # 开始绘图
     plt.figure(figsize=(10, 10))
     
-    # 绘制折线
-    plt.plot(x_vals, y_vals, marker='o', linestyle='-', color='blue', label='Polyline')
+    # 绘制所有点，包括原点
+    all_x = [p[0] for p in polyline_points]
+    all_y = [p[1] for p in polyline_points]
+    plt.scatter(all_x, all_y, color='red', label='Points')
     
-    # 绘制所有点
-    plt.scatter(x_vals, y_vals, color='red')
+    # 绘制连接线
+    for seg in segments:
+        x_values = [seg[0][0], seg[1][0]]
+        y_values = [seg[0][1], seg[1][1]]
+        plt.plot(x_values, y_values, color='blue')
     
     # 绘制y=0和y=x的边界（可选）
-    plt.plot([0, max(x_vals)+1], [0, 0], 'k--', label='y=0')  # y=0
-    plt.plot([0, max(x_vals)+1], [0, max(x_vals)+1], 'g--', label='y=x')  # y=x
+    max_coord = max(all_x + all_y) + 1
+    plt.plot([0, max_coord], [0, 0], 'k--', label='y=0')  # y=0
+    plt.plot([0, max_coord], [0, max_coord], 'g--', label='y=x')  # y=x
     
-    plt.title('按距离排序的连续折线')
+    plt.title('按距离排序的连续折线（相同距离的点不连接）')
     plt.xlabel('x')
     plt.ylabel('y')
     plt.legend()
