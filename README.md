@@ -135,8 +135,7 @@ def main(show_lines=True, show_numbers=True):
 
 ## 示例 | Examples
 
-![GaussCircleVisualizer 示例](https://github.com/yourusername/GaussCircleVisualizer/blob/main/example_plot.png)
-![GaussCircleVisualizer Example](https://github.com/yourusername/GaussCircleVisualizer/blob/main/example_plot.png)
+![GaussCircleVisualizer 示例 | GaussCircleVisualizer Example](example_plot.png)
 
 *上述图像展示了在区域 \(0 < y < x\) 内的格点，具有相同距离的点通过彩色圆弧连接，具有唯一距离的点通过黑色直线连接并进行编号。*
 
