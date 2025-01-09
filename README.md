@@ -1,8 +1,8 @@
 
 # GaussCircleVisualizer
 
-![GaussCircleVisualizer 横幅](https://github.com/yourusername/GaussCircleVisualizer/blob/main/banner.png)
-![GaussCircleVisualizer Banner](https://github.com/yourusername/GaussCircleVisualizer/blob/main/banner.png)
+![GaussCircleVisualizer 横幅 | GaussCircleVisualizer Banner](https://github.com/yourusername/GaussCircleVisualizer/blob/main/banner.png)
+(还没有banner | No banner yet)
 
 ## 概述 | Overview
 
@@ -39,12 +39,21 @@
 
 ## 目录 | Table of Contents
 
-- [安装 | Installation](#安装-installation)
-- [使用方法 | Usage](#使用方法-usage)
-- [示例 | Examples](#示例-examples)
-- [贡献 | Contributing](#贡献-contributing)
-- [许可证 | License](#许可证-license)
-- [鸣谢 | Acknowledgements](#鸣谢-acknowledgements)
+- [GaussCircleVisualizer](#gausscirclevisualizer)
+  - [概述 | Overview](#概述--overview)
+  - [功能 | Features](#功能--features)
+  - [目录 | Table of Contents](#目录--table-of-contents)
+  - [安装 | Installation](#安装--installation)
+    - [前提条件 | Prerequisites](#前提条件--prerequisites)
+    - [步骤 | Steps](#步骤--steps)
+  - [使用方法 | Usage](#使用方法--usage)
+    - [命令行参数 | Command-Line Arguments](#命令行参数--command-line-arguments)
+    - [自定义 | Customization](#自定义--customization)
+  - [示例 | Examples](#示例--examples)
+  - [贡献 | Contributing](#贡献--contributing)
+    - [贡献步骤 | Steps to Contribute](#贡献步骤--steps-to-contribute)
+  - [许可证 | License](#许可证--license)
+  - [鸣谢 | Acknowledgements](#鸣谢--acknowledgements)
 
 ## 安装 | Installation
 
